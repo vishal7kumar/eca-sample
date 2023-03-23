@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/spf13/viper"
 	"os"
 )
 
@@ -11,6 +12,7 @@ type Writer interface {
 
 type objectWriter struct {
 	encoder EncoderService
+	cfg     *viper.Viper
 }
 
 func (o objectWriter) Write(input string, filePath string) {
@@ -18,15 +20,16 @@ func (o objectWriter) Write(input string, filePath string) {
 	o.encoder.Encode(inputBytes, filePath)
 }
 
-func NewObjectWriter(dataShards int, parityShards int) Writer {
+func NewObjectWriter(dataShards int, parityShards int, cfg *viper.Viper) Writer {
 	if dataShards == 0 || parityShards == 0 {
-		// read from config
+		dataShards = cfg.GetInt("dataShards")
+		parityShards = cfg.GetInt("parityShards")
 	}
 	encoder, err := NewEncoder(dataShards, parityShards)
 	if err == invalidDataAndParitySumErr {
-		fmt.Errorf("%v", err)
+		fmt.Printf("%v", err)
 		os.Exit(1)
 	}
 
-	return &objectWriter{encoder: encoder}
+	return &objectWriter{encoder: encoder, cfg: cfg}
 }

@@ -16,14 +16,14 @@ func main() {
 	inputString := "This is a sample input string"
 
 	filePath := "/home/vishal/code/golang/eca-sample/file.txt"
-
+	cfg := cmd.GetConfig()
 	// decide on switch case - decoder/encoder initialization
 	switch operation {
 	case cmd.Write:
-		writer := cmd.NewObjectWriter(dataShards, parityShards)
+		writer := cmd.NewObjectWriter(dataShards, parityShards, cfg)
 		writer.Write(inputString, filePath)
 	case cmd.Read:
-		reader := cmd.NewObjectReader(dataShards, parityShards)
+		reader := cmd.NewObjectReader(dataShards, parityShards, cfg)
 		fileContents := reader.Read(filePath)
 		fmt.Printf("The contents of the file are: %s \n", string(fileContents))
 	default:
