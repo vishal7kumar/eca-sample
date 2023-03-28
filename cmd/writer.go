@@ -7,7 +7,7 @@ import (
 )
 
 type Writer interface {
-	Write(input string, filePath string)
+	Write(input string, fileName string, filePath []string)
 }
 
 type objectWriter struct {
@@ -15,9 +15,9 @@ type objectWriter struct {
 	cfg     *viper.Viper
 }
 
-func (o objectWriter) Write(input string, filePath string) {
+func (o objectWriter) Write(input string, fileName string, filePath []string) {
 	inputBytes := []byte(input)
-	o.encoder.Encode(inputBytes, filePath)
+	o.encoder.Encode(inputBytes, fileName, filePath)
 }
 
 func NewObjectWriter(dataShards int, parityShards int, cfg *viper.Viper) Writer {
@@ -25,6 +25,9 @@ func NewObjectWriter(dataShards int, parityShards int, cfg *viper.Viper) Writer 
 		dataShards = cfg.GetInt("dataShards")
 		parityShards = cfg.GetInt("parityShards")
 	}
+
+	// calculate shard size to determine which Encoder to initialize
+
 	encoder, err := NewEncoder(dataShards, parityShards)
 	if err == invalidDataAndParitySumErr {
 		fmt.Printf("%v", err)

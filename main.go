@@ -8,24 +8,28 @@ import (
 func main() {
 	// values to come from caller API
 	// write/ read.
-	operation := cmd.Operation(cmd.Read)
+	operation := cmd.Operation(cmd.Write)
 
-	dataShards := 5
-	parityShards := 3
+	dataShards := 5   // always from the parameter of the request for the write operation.
+	parityShards := 3 // for the read operation, a module having persistent in-memory DB.
 
 	inputString := "This is a sample input string"
 
-	filePath := "/home/vishal/code/golang/eca-sample/file.txt"
+	filePaths := []string{"/home/vishal/code/golang/eca-sample/output/a",
+		"/home/vishal/code/golang/eca-sample/output/b"}
+	fileName := "file.txt" // assuming to be in the current directory
 	cfg := cmd.GetConfig()
 	// decide on switch case - decoder/encoder initialization
 	switch operation {
 	case cmd.Write:
 		writer := cmd.NewObjectWriter(dataShards, parityShards, cfg)
-		writer.Write(inputString, filePath)
+		writer.Write(inputString, fileName, filePaths)
 	case cmd.Read:
 		reader := cmd.NewObjectReader(dataShards, parityShards, cfg)
-		fileContents := reader.Read(filePath)
-		fmt.Printf("The contents of the file are: %s \n", string(fileContents))
+		fileContents := reader.Read(filePaths[0])
+		fmt.Printf("The contents of the file are: %s \n", string(fileContents)) // returning bytes
+		// read from the streams and write back to it.
+		// no need to store in the memory.
 	default:
 		fmt.Printf("Not Implemented")
 	}

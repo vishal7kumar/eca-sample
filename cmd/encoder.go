@@ -8,12 +8,16 @@ import (
 )
 
 type EncoderService interface {
-	Encode(input []byte, filePath string)
+	Encode(input []byte, fileName string, filePath []string)
 }
 
 type encoderService struct {
 	enc reedsolomon.Encoder
 }
+
+//type streamingEncoder struct {
+//	enc reedsolomon.StreamEncoder
+//}
 
 func NewEncoder(dataShards int, parityShards int) (EncoderService, error) {
 	if dataShards+parityShards > 256 {
@@ -26,7 +30,7 @@ func NewEncoder(dataShards int, parityShards int) (EncoderService, error) {
 	return &encoderService{enc: enc}, nil
 }
 
-func (e encoderService) Encode(data []byte, filePath string) {
+func (e encoderService) Encode(data []byte, fileName string, filePath []string) {
 	shards, err := e.enc.Split(data)
 	checkErr(err)
 
@@ -34,13 +38,13 @@ func (e encoderService) Encode(data []byte, filePath string) {
 	err = e.enc.Encode(shards)
 	checkErr(err)
 
-	dir, file := filepath.Split(filePath)
+	totalPaths := len(filePath)
 
 	for i, shard := range shards {
-		outFile := fmt.Sprintf("%s.%d", file, i)
+		outFile := fmt.Sprintf("%s.%d", fileName, i)
 
 		fmt.Println("Writing to", outFile)
-		err = os.WriteFile(filepath.Join(dir, outFile), shard, 0644)
+		err = os.WriteFile(filepath.Join(filePath[i%totalPaths], outFile), shard, 0644)
 		checkErr(err)
 	}
 }
