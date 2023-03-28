@@ -7,7 +7,7 @@ import (
 )
 
 type Reader interface {
-	Read(filePath string) []byte
+	Read(fileName string, filePaths []string) []byte
 }
 
 type objectReader struct {
@@ -15,9 +15,9 @@ type objectReader struct {
 	cfg     *viper.Viper
 }
 
-func (o objectReader) Read(filePath string) []byte {
-	o.decoder.Decode(filePath)
-	fileContents, err := readFile(filePath)
+func (o objectReader) Read(fileName string, filePaths []string) []byte {
+	outFilePath := o.decoder.Decode(fileName, filePaths)
+	fileContents, err := readFile(outFilePath)
 	if err != nil {
 		fmt.Printf("%v", err)
 		// ignoring the error for now

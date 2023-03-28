@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"github.com/klauspost/reedsolomon"
 	"os"
+	"path/filepath"
 )
 
 type DecoderService interface {
-	Decode(filePath string)
+	Decode(fileName string, filePaths []string) string
 }
 
 type decoderService struct {
@@ -22,10 +23,12 @@ func NewDecoder(dataShards int, parityShards int) DecoderService {
 	return &decoderService{enc: enc, dataShards: dataShards, parityShards: parityShards}
 }
 
-func (e decoderService) Decode(filePath string) {
+func (e decoderService) Decode(fileName string, filePaths []string) string {
+	totalPaths := len(filePaths)
+
 	shards := make([][]byte, e.dataShards+e.parityShards)
 	for i := range shards {
-		inputFile := fmt.Sprintf("%s.%d", filePath, i)
+		inputFile := fmt.Sprintf("%s.%d", filepath.Join(filePaths[i%totalPaths], fileName), i)
 		fmt.Println("Opening", inputFile)
 		var err error
 		shards[i], err = os.ReadFile(inputFile)
@@ -57,11 +60,18 @@ func (e decoderService) Decode(filePath string) {
 
 	// Join the shards and write them
 
-	fmt.Println("Writing data to", filePath)
-	f, err := os.Create(filePath)
+	// TODO: Write data to the PWD ?
+	cwd, err := os.Getwd()
+	checkErr(err)
+
+	outFilePath := filepath.Join(cwd, fileName)
+	fmt.Println("Writing data to", filepath.Join(cwd, fileName))
+	f, err := os.Create(outFilePath)
 	checkErr(err)
 
 	// We don't know the exact filesize.
 	err = e.enc.Join(f, shards, len(shards[0])*e.dataShards)
 	checkErr(err)
+
+	return outFilePath
 }

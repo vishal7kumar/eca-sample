@@ -8,7 +8,7 @@ import (
 func main() {
 	// values to come from caller API
 	// write/ read.
-	operation := cmd.Operation(cmd.Write)
+	operation := cmd.Operation(cmd.Read)
 
 	dataShards := 5   // always from the parameter of the request for the write operation.
 	parityShards := 3 // for the read operation, a module having persistent in-memory DB.
@@ -26,7 +26,7 @@ func main() {
 		writer.Write(inputString, fileName, filePaths)
 	case cmd.Read:
 		reader := cmd.NewObjectReader(dataShards, parityShards, cfg)
-		fileContents := reader.Read(filePaths[0])
+		fileContents := reader.Read(fileName, filePaths)
 		fmt.Printf("The contents of the file are: %s \n", string(fileContents)) // returning bytes
 		// read from the streams and write back to it.
 		// no need to store in the memory.
