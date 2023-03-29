@@ -17,7 +17,7 @@ type simpleDecoder struct {
 	parityShards int
 }
 
-func NewDecoder(dataShards int, parityShards int) DecoderService {
+func NewSimpleDecoder(dataShards int, parityShards int) DecoderService {
 	enc, err := reedsolomon.New(dataShards, parityShards)
 	checkErr(err)
 	return &simpleDecoder{enc: enc, dataShards: dataShards, parityShards: parityShards}

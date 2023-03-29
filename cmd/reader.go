@@ -38,5 +38,5 @@ func NewObjectReader(dataShards int, parityShards int, cfg *viper.Viper) Reader 
 		dataShards = cfg.GetInt("dataShards")
 		parityShards = cfg.GetInt("parityShards")
 	}
-	return &objectReader{decoder: NewDecoder(dataShards, parityShards), cfg: cfg}
+	return &objectReader{decoder: NewSimpleDecoder(dataShards, parityShards), cfg: cfg}
 }
