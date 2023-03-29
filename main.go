@@ -13,13 +13,14 @@ func main() {
 	dataShards := 5   // always from the parameter of the request for the write operation.
 	parityShards := 3 // for the read operation, a module having persistent in-memory DB.
 
+	// TODO: data should be coming from stream
 	inputString := "This is a sample input string"
 
 	filePaths := []string{"/home/vishal/code/golang/eca-sample/output/a",
 		"/home/vishal/code/golang/eca-sample/output/b"}
 	fileName := "file.txt" // assuming to be in the current directory
 	cfg := cmd.GetConfig()
-	// decide on switch case - decoder/encoder initialization
+
 	switch operation {
 	case cmd.Write:
 		writer := cmd.NewObjectWriter(dataShards, parityShards, cfg)

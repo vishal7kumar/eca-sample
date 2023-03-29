@@ -15,9 +15,9 @@ type encoderService struct {
 	enc reedsolomon.Encoder
 }
 
-//type streamingEncoder struct {
-//	enc reedsolomon.StreamEncoder
-//}
+type streamingEncoder struct {
+	enc reedsolomon.StreamEncoder
+}
 
 func NewEncoder(dataShards int, parityShards int) (EncoderService, error) {
 	if dataShards+parityShards > 256 {

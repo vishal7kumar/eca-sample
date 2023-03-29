@@ -11,7 +11,7 @@ type DecoderService interface {
 	Decode(fileName string, filePaths []string) string
 }
 
-type decoderService struct {
+type simpleDecoder struct {
 	enc          reedsolomon.Encoder
 	dataShards   int
 	parityShards int
@@ -20,14 +20,15 @@ type decoderService struct {
 func NewDecoder(dataShards int, parityShards int) DecoderService {
 	enc, err := reedsolomon.New(dataShards, parityShards)
 	checkErr(err)
-	return &decoderService{enc: enc, dataShards: dataShards, parityShards: parityShards}
+	return &simpleDecoder{enc: enc, dataShards: dataShards, parityShards: parityShards}
 }
 
-func (e decoderService) Decode(fileName string, filePaths []string) string {
+func (e simpleDecoder) Decode(fileName string, filePaths []string) string {
 	totalPaths := len(filePaths)
 
 	shards := make([][]byte, e.dataShards+e.parityShards)
 	for i := range shards {
+		// Round Robin allocation of shards
 		inputFile := fmt.Sprintf("%s.%d", filepath.Join(filePaths[i%totalPaths], fileName), i)
 		fmt.Println("Opening", inputFile)
 		var err error

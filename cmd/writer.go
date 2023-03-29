@@ -27,6 +27,7 @@ func NewObjectWriter(dataShards int, parityShards int, cfg *viper.Viper) Writer 
 	}
 
 	// calculate shard size to determine which Encoder to initialize
+	//shards := dataShards + parityShards
 
 	encoder, err := NewEncoder(dataShards, parityShards)
 	if err == invalidDataAndParitySumErr {
