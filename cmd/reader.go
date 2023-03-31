@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"os"
+
+	"github.com/spf13/viper"
 )
 
 type Reader interface {
@@ -38,5 +39,9 @@ func NewObjectReader(dataShards int, parityShards int, cfg *viper.Viper) Reader 
 		dataShards = cfg.GetInt("dataShards")
 		parityShards = cfg.GetInt("parityShards")
 	}
+
+	// TODO: based on the size of a shard, return suitable decoder
+	// return &objectReader{decoder: NewStreamingDecoder(dataShards, parityShards), cfg: cfg}
+
 	return &objectReader{decoder: NewSimpleDecoder(dataShards, parityShards), cfg: cfg}
 }

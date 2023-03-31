@@ -2,12 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
+	"io"
+	"log"
 	"os"
+
+	"github.com/spf13/viper"
 )
 
 type Writer interface {
-	Write(input string, fileName string, filePath []string)
+	Write(input io.Reader, fileName string, filePath []string)
 }
 
 type objectWriter struct {
@@ -15,12 +18,12 @@ type objectWriter struct {
 	cfg     *viper.Viper
 }
 
-func (o objectWriter) Write(input string, fileName string, filePath []string) {
-	inputBytes := []byte(input)
-	o.encoder.Encode(inputBytes, fileName, filePath)
+func (o objectWriter) Write(input io.Reader, fileName string, filePath []string) {
+	// inputBytes := []byte(input)
+	o.encoder.Encode(input, fileName, filePath)
 }
 
-func NewObjectWriter(dataShards int, parityShards int, cfg *viper.Viper) Writer {
+func NewObjectWriter(dataShards int, parityShards int, size int64, cfg *viper.Viper) Writer {
 	if dataShards == 0 || parityShards == 0 {
 		dataShards = cfg.GetInt("dataShards")
 		parityShards = cfg.GetInt("parityShards")
@@ -28,8 +31,22 @@ func NewObjectWriter(dataShards int, parityShards int, cfg *viper.Viper) Writer 
 
 	// calculate shard size to determine which Encoder to initialize
 	//shards := dataShards + parityShards
+	var encoder EncoderService
+	var err error
+	if size > (10 * 1024 * 1024) {
+		encoder, err = NewStreamingEncoder(dataShards, parityShards, size)
+		if err != nil {
+			log.Fatal("unable to initialize encoder.")
+			os.Exit(1)
+		}
+	} else {
+		encoder, err = NewSimpleEncoder(dataShards, parityShards, size)
+		if err != nil {
+			log.Fatal("unable to initialize encoder.")
+			os.Exit(1)
+		}
+	}
 
-	encoder, err := NewEncoder(dataShards, parityShards)
 	if err == invalidDataAndParitySumErr {
 		fmt.Printf("%v", err)
 		os.Exit(1)
