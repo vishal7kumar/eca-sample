@@ -2,13 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/klauspost/reedsolomon"
+	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/klauspost/reedsolomon"
 )
 
 type DecoderService interface {
-	Decode(fileName string, filePaths []string) string
+	Decode(fileName string, filePaths []string) (io.Reader, int)
 }
 
 type simpleDecoder struct {
@@ -23,13 +25,11 @@ func NewSimpleDecoder(dataShards int, parityShards int) DecoderService {
 	return &simpleDecoder{enc: enc, dataShards: dataShards, parityShards: parityShards}
 }
 
-func (e simpleDecoder) Decode(fileName string, filePaths []string) string {
-	totalPaths := len(filePaths)
+func (e simpleDecoder) Decode(fileName string, filePaths []string) (io.Reader, int) {
 
 	shards := make([][]byte, e.dataShards+e.parityShards)
 	for i := range shards {
-		// Round Robin allocation of shards
-		inputFile := fmt.Sprintf("%s.%d", filepath.Join(filePaths[i%totalPaths], fileName), i)
+		inputFile := fmt.Sprintf("%s.%d", filepath.Join(filePaths[i], fileName), i)
 		fmt.Println("Opening", inputFile)
 		var err error
 		shards[i], err = os.ReadFile(inputFile)
@@ -42,6 +42,7 @@ func (e simpleDecoder) Decode(fileName string, filePaths []string) string {
 
 	// Verify the shards
 	ok, err := e.enc.Verify(shards)
+	checkErr(err)
 	if ok {
 		fmt.Println("No reconstruction needed")
 	} else {
@@ -61,18 +62,18 @@ func (e simpleDecoder) Decode(fileName string, filePaths []string) string {
 
 	// Join the shards and write them
 
-	// TODO: Write data to the PWD ?
-	cwd, err := os.Getwd()
-	checkErr(err)
-
-	outFilePath := filepath.Join(cwd, fileName)
-	fmt.Println("Writing data to", filepath.Join(cwd, fileName))
-	f, err := os.Create(outFilePath)
-	checkErr(err)
+	reader, writer := io.Pipe()
 
 	// We don't know the exact filesize.
-	err = e.enc.Join(f, shards, len(shards[0])*e.dataShards)
-	checkErr(err)
+	fileSize := len(shards[0]) * e.dataShards
 
-	return outFilePath
+	go func() {
+		defer writer.Close()
+		err = e.enc.Join(writer, shards, fileSize)
+		checkErr(err)
+		// TODO: the err needs to be used in the main program
+		// need to use channels
+	}()
+
+	return reader, fileSize
 }

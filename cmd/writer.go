@@ -47,7 +47,7 @@ func NewObjectWriter(dataShards int, parityShards int, size int64, cfg *viper.Vi
 		}
 	}
 
-	if err == invalidDataAndParitySumErr {
+	if err == ErrInvalidDataAndParitySum {
 		fmt.Printf("%v", err)
 		os.Exit(1)
 	}

@@ -10,15 +10,15 @@ import (
 )
 
 type streamingEncoder struct {
-	enc reedsolomon.StreamEncoder
-	dataShards int
+	enc          reedsolomon.StreamEncoder
+	dataShards   int
 	parityShards int
-	size int64
+	size         int64
 }
 
 func NewStreamingEncoder(dataShards int, parityShards int, size int64) (EncoderService, error) {
 	if dataShards+parityShards > 256 {
-		return &simpleEncoder{}, invalidDataAndParitySumErr
+		return &simpleEncoder{}, ErrInvalidDataAndParitySum
 	}
 
 	enc, err := reedsolomon.NewStream(dataShards, parityShards)

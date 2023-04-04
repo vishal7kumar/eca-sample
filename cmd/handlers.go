@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -10,11 +9,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
-
-// move to responses
-type Response struct {
-	Data []byte `json:"data"`
-}
 
 func ReadHandler(ctx *gin.Context) {
 	fileName := ctx.Param("fileName")
@@ -33,23 +27,19 @@ func ReadHandler(ctx *gin.Context) {
 
 	filePaths := ctx.Query("filePaths")
 
-	// input validations reqiured
-
 	filePathsList := parseParams(filePaths)
 
-	// move to validations
-	if len(filePathsList) != dataShards+parityShards {
-		log.Fatal("number of paths should be equal to the total shards.")
-		os.Exit(1)
+	err = validateParams(dataShards, parityShards, filePathsList)
+	if err != nil {
+		errorResponse := Response{Error: &ErrorResponse{Error: err.Error()}}
+		ctx.JSON(http.StatusBadRequest, errorResponse)
 	}
 
-	reader := NewObjectReader(dataShards, parityShards, GetConfig())
-	fileContents := reader.Read(fileName, filePathsList)
-	fmt.Printf("The contents of the file are: %s \n", string(fileContents)) // returning bytes
+	objReader := NewObjectReader(dataShards, parityShards, GetConfig())
+	reader, size := objReader.Read(fileName, filePathsList)
+	ctx.Header("Content-Type", "text/plain")
 
-	response := Response{Data: fileContents}
-
-	ctx.JSON(http.StatusOK, response)
+	ctx.DataFromReader(http.StatusOK, size, "text/plain", reader, nil)
 }
 
 func WriteHandler(ctx *gin.Context) {
@@ -69,9 +59,13 @@ func WriteHandler(ctx *gin.Context) {
 
 	filePaths := ctx.Query("filePaths")
 
-	// input validations reqiured
-
 	filePathsList := parseParams(filePaths)
+
+	err = validateParams(dataShards, parityShards, filePathsList)
+	if err != nil {
+		errorResponse := Response{Error: &ErrorResponse{Error: err.Error()}}
+		ctx.JSON(http.StatusBadRequest, errorResponse)
+	}
 
 	requestBody := ctx.Request.Body
 
@@ -82,7 +76,6 @@ func WriteHandler(ctx *gin.Context) {
 		os.Exit(1)
 	}
 
-	// move to validations
 	if contentLengthInBytes == 0 {
 		log.Fatal("data size is required for encoding operation.")
 		os.Exit(1)
@@ -90,18 +83,19 @@ func WriteHandler(ctx *gin.Context) {
 
 	size := int64(contentLengthInBytes)
 
-	if len(filePathsList) != dataShards+parityShards {
-		log.Fatal("number of paths should be equal to the total shards.")
-		os.Exit(1)
-	}
-
 	writer := NewObjectWriter(dataShards, parityShards, size, GetConfig())
 	writer.Write(requestBody, fileName, filePathsList)
 
 	ctx.JSON(http.StatusCreated, nil)
 }
 
-// move to utils
 func parseParams(params string) []string {
 	return strings.Split(params, ",")
+}
+
+func validateParams(dataShards int, parityShards int, filePathsList []string) error {
+	if len(filePathsList) != dataShards+parityShards {
+		return ErrUnequalPathsAndShards
+	}
+	return nil
 }

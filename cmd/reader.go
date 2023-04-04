@@ -1,14 +1,13 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
+	"io"
 
 	"github.com/spf13/viper"
 )
 
 type Reader interface {
-	Read(fileName string, filePaths []string) []byte
+	Read(fileName string, filePaths []string) (io.Reader, int64)
 }
 
 type objectReader struct {
@@ -16,22 +15,9 @@ type objectReader struct {
 	cfg     *viper.Viper
 }
 
-func (o objectReader) Read(fileName string, filePaths []string) []byte {
-	outFilePath := o.decoder.Decode(fileName, filePaths)
-	fileContents, err := readFile(outFilePath)
-	if err != nil {
-		fmt.Printf("%v", err)
-		// ignoring the error for now
-	}
-	return fileContents
-}
-
-func readFile(filePath string) ([]byte, error) {
-	fileContents, err := os.ReadFile(filePath)
-	if err != nil {
-		return []byte{}, fmt.Errorf("error while reading file")
-	}
-	return fileContents, nil
+func (o objectReader) Read(fileName string, filePaths []string) (io.Reader, int64) {
+	reader, size := o.decoder.Decode(fileName, filePaths)
+	return reader, int64(size)
 }
 
 func NewObjectReader(dataShards int, parityShards int, cfg *viper.Viper) Reader {

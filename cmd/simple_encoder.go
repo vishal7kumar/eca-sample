@@ -21,7 +21,7 @@ type simpleEncoder struct {
 
 func NewSimpleEncoder(dataShards int, parityShards int, size int64) (EncoderService, error) {
 	if dataShards+parityShards > 256 {
-		return &simpleEncoder{}, invalidDataAndParitySumErr
+		return &simpleEncoder{}, ErrInvalidDataAndParitySum
 	}
 
 	enc, err := reedsolomon.New(dataShards, parityShards)
