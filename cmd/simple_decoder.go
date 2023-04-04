@@ -60,13 +60,12 @@ func (e simpleDecoder) Decode(fileName string, filePaths []string) (io.Reader, i
 		checkErr(err)
 	}
 
-	// Join the shards and write them
-
 	reader, writer := io.Pipe()
 
 	// We don't know the exact filesize.
 	fileSize := len(shards[0]) * e.dataShards
 
+	// Join the shards and write them
 	go func() {
 		defer writer.Close()
 		err = e.enc.Join(writer, shards, fileSize)
