@@ -6,13 +6,13 @@ import (
 	"os"
 )
 
-var config *viper.Viper //TODO: should be written in a wrapper ?
+var config *viper.Viper
 
 func initConfig() {
-	config = viper.New()  //TODO: should need to add options ?
+	config = viper.New()
 	config.AutomaticEnv() // read value ENV variable
 	stage := config.GetString("STAGE")
-	config.SetConfigName(stage) // TODO: config file should be based on ENV
+	config.SetConfigName(stage)
 	config.SetConfigType("json")
 	config.AddConfigPath(".")
 	config.AddConfigPath("./config/") // config file path

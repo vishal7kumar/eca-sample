@@ -2,33 +2,34 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/klauspost/reedsolomon"
+	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/klauspost/reedsolomon"
 )
 
 type DecoderService interface {
-	Decode(fileName string, filePaths []string) string
+	Decode(fileName string, filePaths []string) (io.Reader, int)
 }
 
-type decoderService struct {
+type simpleDecoder struct {
 	enc          reedsolomon.Encoder
 	dataShards   int
 	parityShards int
 }
 
-func NewDecoder(dataShards int, parityShards int) DecoderService {
+func NewSimpleDecoder(dataShards int, parityShards int) DecoderService {
 	enc, err := reedsolomon.New(dataShards, parityShards)
 	checkErr(err)
-	return &decoderService{enc: enc, dataShards: dataShards, parityShards: parityShards}
+	return &simpleDecoder{enc: enc, dataShards: dataShards, parityShards: parityShards}
 }
 
-func (e decoderService) Decode(fileName string, filePaths []string) string {
-	totalPaths := len(filePaths)
+func (e simpleDecoder) Decode(fileName string, filePaths []string) (io.Reader, int) {
 
 	shards := make([][]byte, e.dataShards+e.parityShards)
 	for i := range shards {
-		inputFile := fmt.Sprintf("%s.%d", filepath.Join(filePaths[i%totalPaths], fileName), i)
+		inputFile := fmt.Sprintf("%s.%d", filepath.Join(filePaths[i], fileName), i)
 		fmt.Println("Opening", inputFile)
 		var err error
 		shards[i], err = os.ReadFile(inputFile)
@@ -41,6 +42,7 @@ func (e decoderService) Decode(fileName string, filePaths []string) string {
 
 	// Verify the shards
 	ok, err := e.enc.Verify(shards)
+	checkErr(err)
 	if ok {
 		fmt.Println("No reconstruction needed")
 	} else {
@@ -60,18 +62,18 @@ func (e decoderService) Decode(fileName string, filePaths []string) string {
 
 	// Join the shards and write them
 
-	// TODO: Write data to the PWD ?
-	cwd, err := os.Getwd()
-	checkErr(err)
-
-	outFilePath := filepath.Join(cwd, fileName)
-	fmt.Println("Writing data to", filepath.Join(cwd, fileName))
-	f, err := os.Create(outFilePath)
-	checkErr(err)
+	reader, writer := io.Pipe()
 
 	// We don't know the exact filesize.
-	err = e.enc.Join(f, shards, len(shards[0])*e.dataShards)
-	checkErr(err)
+	fileSize := len(shards[0]) * e.dataShards
 
-	return outFilePath
+	go func() {
+		defer writer.Close()
+		err = e.enc.Join(writer, shards, fileSize)
+		checkErr(err)
+		// TODO: the err needs to be used in the main program
+		// need to use channels
+	}()
+
+	return reader, fileSize
 }
