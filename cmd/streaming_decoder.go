@@ -85,11 +85,9 @@ func (e streamingDecoder) Decode(fileName string, filePaths []string) (io.Reader
 
 func openInput(dataShards, parShards int, fileName string, filePaths []string) (r []io.Reader, size int64, err error) {
 	// Create shards and load the data.
-	paths := len(filePaths)
-
 	shards := make([]io.Reader, dataShards+parShards)
 	for i := range shards {
-		inputFileName := fmt.Sprintf("%s.%d", filepath.Join(filePaths[i%paths], fileName), i)
+		inputFileName := fmt.Sprintf("%s.%d", filepath.Join(filePaths[i], fileName), i)
 		fmt.Println("Opening", inputFileName)
 		f, err := os.Open(inputFileName)
 		if err != nil {

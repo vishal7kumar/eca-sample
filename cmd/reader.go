@@ -1,7 +1,11 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
+	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/spf13/viper"
 )
@@ -20,14 +24,38 @@ func (o objectReader) Read(fileName string, filePaths []string) (io.Reader, int6
 	return reader, int64(size)
 }
 
-func NewObjectReader(dataShards int, parityShards int, cfg *viper.Viper) Reader {
+func NewObjectReader(dataShards int, parityShards int, fileName string, filePaths []string, cfg *viper.Viper) Reader {
 	if dataShards == 0 && parityShards == 0 {
 		dataShards = cfg.GetInt("dataShards")
 		parityShards = cfg.GetInt("parityShards")
 	}
 
-	// TODO: based on the size of a shard, return suitable decoder
-	// return &objectReader{decoder: NewStreamingDecoder(dataShards, parityShards), cfg: cfg}
+	var decoder DecoderService
+	shardSize, err := getShardSize(fileName, filePaths, dataShards, parityShards)
 
-	return &objectReader{decoder: NewSimpleDecoder(dataShards, parityShards), cfg: cfg}
+	if shardSize > 10*1024*1024 || err != nil {
+		decoder = NewStreamingDecoder(dataShards, parityShards)
+	} else {
+		decoder = NewSimpleDecoder(dataShards, parityShards)
+	}
+
+	return &objectReader{decoder: decoder, cfg: cfg}
+}
+
+func getShardSize(fileName string, filePaths []string, dataShards int, parityShards int) (int64, error) {
+	totalShards := dataShards + parityShards
+
+	for i := 0; i < totalShards; i++ {
+		inputFileName := fmt.Sprintf("%s.%d", filepath.Join(filePaths[i], fileName), i)
+		fileInfo, err := os.Stat(inputFileName)
+		if err != nil {
+			log.Printf("Error: %v \n", err)
+			log.Println("continuing to the next file shard")
+			continue
+		}
+
+		return fileInfo.Size(), nil
+
+	}
+	return 0, ErrNoValidShardFound
 }

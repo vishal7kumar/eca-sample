@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"github.com/spf13/viper"
 	"log"
 	"os"
+
+	"github.com/spf13/viper"
 )
 
 var config *viper.Viper
@@ -15,11 +16,12 @@ func initConfig() {
 	config.SetConfigName(stage)
 	config.SetConfigType("json")
 	config.AddConfigPath(".")
-	config.AddConfigPath("./config/") // config file path
+	config.AddConfigPath("./config/")  // config file path
+	config.AddConfigPath("../config/") // config file path
 
 	err := config.ReadInConfig()
 	if err != nil {
-		log.Println("fatal error config file: default \n", err)
+		log.Println("fatal error config file: \n", err)
 		os.Exit(1)
 	}
 }

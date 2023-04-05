@@ -35,7 +35,7 @@ func ReadHandler(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, errorResponse)
 	}
 
-	objReader := NewObjectReader(dataShards, parityShards, GetConfig())
+	objReader := NewObjectReader(dataShards, parityShards, fileName, filePathsList, GetConfig())
 	reader, size := objReader.Read(fileName, filePathsList)
 	ctx.Header("Content-Type", "text/plain")
 

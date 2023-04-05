@@ -30,10 +30,10 @@ func NewObjectWriter(dataShards int, parityShards int, size int64, cfg *viper.Vi
 	}
 
 	// calculate shard size to determine which Encoder to initialize
-	//shards := dataShards + parityShards
+	shardSize := size / int64(dataShards)
 	var encoder EncoderService
 	var err error
-	if size > (10 * 1024 * 1024) {
+	if shardSize > (10 * 1024 * 1024) {
 		encoder, err = NewStreamingEncoder(dataShards, parityShards, size)
 		if err != nil {
 			log.Fatal("unable to initialize encoder.")
