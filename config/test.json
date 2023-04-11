@@ -1,0 +1,23 @@
+{
+  "dataShards": 5,
+  "parityShards": 3,
+  "inputFiles": {
+    "filePath": "cmd/testdata",
+    "fileNames": [
+      "largefile.bin"
+    ], 
+    "fileSizes": [
+      "10G"
+    ]
+  },
+  "outputFilePaths": [
+    "/home/vishal/code/golang/eca-sample/cmd/testdata/output/a",
+    "/home/vishal/code/golang/eca-sample/cmd/testdata/output/b",
+    "/home/vishal/code/golang/eca-sample/cmd/testdata/output/c",
+    "/home/vishal/code/golang/eca-sample/cmd/testdata/output/d",
+    "/home/vishal/code/golang/eca-sample/cmd/testdata/output/e",
+    "/home/vishal/code/golang/eca-sample/cmd/testdata/output/f",
+    "/home/vishal/code/golang/eca-sample/cmd/testdata/output/g",
+    "/home/vishal/code/golang/eca-sample/cmd/testdata/output/h"
+  ]
+}
