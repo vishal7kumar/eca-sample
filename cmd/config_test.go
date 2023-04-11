@@ -9,13 +9,13 @@ import (
 
 var cfg *viper.Viper
 
-func initialize() {
+func initializeConfig() {
 	os.Setenv("STAGE", "test")
 	cfg = GetConfig()
 }
 
 func TestConfig(t *testing.T) {
-	initialize()
+	initializeConfig()
 
 	expectedDataShards := 5
 	if cfg.GetInt("dataShards") != expectedDataShards {
@@ -29,7 +29,7 @@ func TestConfig(t *testing.T) {
 }
 
 func BenchmarkConfig(b *testing.B) {
-	initialize()
+	initializeConfig()
 	for i := 0; i < b.N; i++ {
 		cfg.GetInt("dataShards")
 	}
