@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/klauspost/reedsolomon"
+	"log"
 )
 
 type streamingEncoder struct {
@@ -33,7 +34,7 @@ func (e streamingEncoder) Encode(data io.Reader, fileName string, filePaths []st
 
 	for i := range out {
 		outputFile := fmt.Sprintf("%s.%d", filepath.Join(filePaths[i], fileName), i)
-		fmt.Println("Creating", outputFile)
+		log.Println("Creating", outputFile)
 		var err error
 		out[i], err = os.Create(outputFile)
 		checkErr(err)
@@ -70,5 +71,5 @@ func (e streamingEncoder) Encode(data io.Reader, fileName string, filePaths []st
 	// Encode parity
 	err = e.enc.Encode(input, parity)
 	checkErr(err)
-	fmt.Printf("File split into %d data + %d parity shards.\n", e.dataShards, e.parityShards)
+	log.Printf("File split into %d data + %d parity shards.\n", e.dataShards, e.parityShards)
 }

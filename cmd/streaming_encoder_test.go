@@ -75,8 +75,39 @@ func (s streamingEncoderTest) testStreamingEncoder(t *testing.T) {
 	}
 }
 
+func (s streamingEncoderTest) benchStreamingEncoder(b *testing.B) {
+	for _, fileName := range s.inputFileNames {
+		data := []byte("hello world!")
+		reader := NewInfiniteReader(data)
+
+		fileSize, err := getFileSize(s.inputFileSize[0])
+		if err != nil {
+			panic(err)
+		}
+
+		encoder, err := NewStreamingEncoder(s.dataShards, s.parityShards, fileSize)
+		if err != nil {
+			panic(err)
+		}
+
+		b.SetBytes(fileSize)
+		b.ResetTimer()
+		b.StartTimer()
+		for i := 0; i < b.N; i++ {
+			encoder.Encode(reader, fileName, s.outputFilePaths)
+		}
+		b.StopTimer()
+	}
+}
+
 func TestStreamingEncoder(t *testing.T) {
 	s := NewStreamingEncoderTest()
 	s.initialize()
 	s.testStreamingEncoder(t)
+}
+
+func BenchmarkStreamingEncoder(b *testing.B) {
+	s := NewStreamingEncoderTest()
+	s.initialize()
+	s.benchStreamingEncoder(b)
 }

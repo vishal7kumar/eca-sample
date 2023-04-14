@@ -1,18 +1,8 @@
 package cmd
 
 import (
-	"os"
 	"testing"
-
-	"github.com/spf13/viper"
 )
-
-var cfg *viper.Viper
-
-func initializeConfig() {
-	os.Setenv("STAGE", "test")
-	cfg = GetConfig()
-}
 
 func TestConfig(t *testing.T) {
 	initializeConfig()

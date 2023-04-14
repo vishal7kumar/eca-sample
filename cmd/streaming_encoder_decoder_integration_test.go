@@ -1,12 +1,13 @@
 package cmd
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
-type streamingEncoderDecoderIntegrationTest struct {
+type streamingEncoderDecoderIntegration struct {
 	dataShards      int
 	parityShards    int
 	inputFileNames  []string
@@ -15,7 +16,7 @@ type streamingEncoderDecoderIntegrationTest struct {
 	outputFilePaths []string
 }
 
-func NewStreamingEncoderDecoderIntegrationTest() streamingEncoderDecoderIntegrationTest {
+func NewStreamingEncoderDecoderIntegration() streamingEncoderDecoderIntegration {
 
 	initializeConfig()
 
@@ -26,21 +27,20 @@ func NewStreamingEncoderDecoderIntegrationTest() streamingEncoderDecoderIntegrat
 	inputFilePath := cfg.GetString("inputFiles.filePath")
 	outputFilePaths := cfg.GetStringSlice("outputFilePaths")
 
-	return streamingEncoderDecoderIntegrationTest{dataShards: dataShards, parityShards: parityShards, inputFileNames: inputFileNames, inputFileSize: inputFileSizes,
+	return streamingEncoderDecoderIntegration{dataShards: dataShards, parityShards: parityShards, inputFileNames: inputFileNames, inputFileSize: inputFileSizes,
 		inputFilePath: inputFilePath, outputFilePaths: outputFilePaths}
 }
 
-func (s streamingEncoderDecoderIntegrationTest) initialize() {
+func (s streamingEncoderDecoderIntegration) initialize() {
 	// ensure folder structure is present
 	createFolderStructure(s.outputFilePaths)
 
-	// TODO: generate a large file
 	inputFilePath := filepath.Join("..", s.inputFilePath)
 
 	generateInputFiles(s.inputFileSize, s.inputFileNames, inputFilePath)
 }
 
-func (s streamingEncoderDecoderIntegrationTest) benchmarkStreamingEncoderDecoderIntegrationTest(b *testing.B) {
+func (s streamingEncoderDecoderIntegration) testStreamingEncoderDecoderIntegration(t *testing.T) {
 	for _, fileName := range s.inputFileNames {
 		testDataFile := filepath.Join("testdata", fileName)
 
@@ -67,16 +67,50 @@ func (s streamingEncoderDecoderIntegrationTest) benchmarkStreamingEncoderDecoder
 			panic(err)
 		}
 
-		for i := 0; i < b.N; i++ {
-			encoder.Encode(file, fileName, s.outputFilePaths)
-			_, fileSize := decoder.Decode(fileName, s.outputFilePaths)
-			b.SetBytes(int64(fileSize))
+		encoder.Encode(file, fileName, s.outputFilePaths)
+		decoder.Decode(fileName, s.outputFilePaths)
+	}
+}
+
+func (s streamingEncoderDecoderIntegration) benchmarkStreamingEncoderDecoderIntegrationTest(b *testing.B) {
+	for _, fileName := range s.inputFileNames {
+		data := []byte("hello")
+		reader := NewInfiniteReader(data)
+
+		fileSize, err := getFileSize(s.inputFileSize[0])
+		if err != nil {
+			panic(err)
 		}
+
+		encoder, err := NewStreamingEncoder(s.dataShards, s.parityShards, fileSize)
+		if err != nil {
+			panic(err)
+		}
+
+		decoder := NewStreamingDecoder(s.dataShards, s.parityShards)
+		if err != nil {
+			panic(err)
+		}
+
+		b.SetBytes(int64(fileSize))
+		b.ResetTimer()
+		b.StartTimer()
+		for i := 0; i < b.N; i++ {
+			encoder.Encode(reader, fileName, s.outputFilePaths)
+			decoder.Decode(fileName, s.outputFilePaths)
+		}
+		b.StopTimer()
 	}
 }
 
 func BenchmarkStreamingEncoderDecoderIntegrationTest(b *testing.B) {
-	s := NewStreamingEncoderDecoderIntegrationTest()
+	s := NewStreamingEncoderDecoderIntegration()
 	s.initialize()
 	s.benchmarkStreamingEncoderDecoderIntegrationTest(b)
+}
+
+func TestStreamingEncoderDecoderIntegration(t *testing.T) {
+	s := NewStreamingEncoderDecoderIntegration()
+	s.initialize()
+	s.testStreamingEncoderDecoderIntegration(t)
 }
